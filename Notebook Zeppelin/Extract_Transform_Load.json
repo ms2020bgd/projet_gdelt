@@ -1,0 +1,620 @@
+{
+  "paragraphs": [
+    {
+      "text": "%md\n# Projet GDELT - Script ETL - janvier 2020\n#### Auteur : Camille COCHENER, Sophie LEVEUGLE, Romain LEGRAND, Rodolphe SIMONEAU, Hamza AMRI\n\n### *Objectifs*\n\n- Extraire les données d\u0027une journée (ex : 1er décembre 2019) du bucket S3 dans lequel elles sont stockées\n- Pré-traiter les données en fonction des problèmatiques d\u0027intérêt\n- Charger les tables créées dans Cassandra\n\n\nPour construire cet ETL, on utilisera Apacha Spark, framework de calcul distribué en cluster. Spark fournit une interface pour la programmation de clusters entiers avec parallélisme des données implicites et tolérance aux pannes. Comme le calcul est fait en mémoire, il est plus rapide que les concurrents comme MapReduce et autres.",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:44:17 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch1\u003eProjet GDELT - Script ETL - janvier 2020\u003c/h1\u003e\n\u003ch4\u003eAuteur : Camille COCHENER, Sophie LEVEUGLE, Romain LEGRAND, Rodolphe SIMONEAU, Hamza AMRI\u003c/h4\u003e\n\u003ch3\u003e\u003cem\u003eObjectifs\u003c/em\u003e\u003c/h3\u003e\n\u003cul\u003e\n  \u003cli\u003eExtraire les données d\u0026rsquo;une journée (ex : 1er décembre 2019) du bucket S3 dans lequel elles sont stockées\u003c/li\u003e\n  \u003cli\u003ePré-traiter les données en fonction des problèmatiques d\u0026rsquo;intérêt\u003c/li\u003e\n  \u003cli\u003eCharger les tables créées dans Cassandra\u003c/li\u003e\n\u003c/ul\u003e\n\u003cp\u003ePour construire cet ETL, on utilisera Apacha Spark, framework de calcul distribué en cluster. Spark fournit une interface pour la programmation de clusters entiers avec parallélisme des données implicites et tolérance aux pannes. Comme le calcul est fait en mémoire, il est plus rapide que les concurrents comme MapReduce et autres.\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578822351699_-1528191264",
+      "id": "20200112-094551_1494650104",
+      "dateCreated": "Jan 12, 2020 9:45:51 AM",
+      "dateStarted": "Jan 12, 2020 10:44:17 AM",
+      "dateFinished": "Jan 12, 2020 10:44:17 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n#### Librairies utilisées",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:44:18 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch4\u003eLibrairies utilisées\u003c/h4\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578823457442_737601587",
+      "id": "20200112-100417_1739530681",
+      "dateCreated": "Jan 12, 2020 10:04:17 AM",
+      "dateStarted": "Jan 12, 2020 10:44:18 AM",
+      "dateFinished": "Jan 12, 2020 10:44:18 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "import sys.process._\nimport java.net.URL\nimport java.io.File\nimport java.io.File\nimport java.nio.file.{Files, StandardCopyOption}\nimport java.net.HttpURLConnection \nimport org.apache.spark.sql.functions._\nimport org.apache.spark.sql.SQLContext\nimport org.apache.spark.input.PortableDataStream\nimport java.util.zip.ZipInputStream\nimport java.io.BufferedReader\nimport java.io.InputStreamReader\n\n//import com.amazonaws.services.s3.AmazonS3Client\n//import com.amazonaws.auth.BasicAWSCredentials",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:44:18 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": true
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "\nimport sys.process._\n\nimport java.net.URL\n\nimport java.io.File\n\nimport java.io.File\n\nimport java.nio.file.{Files, StandardCopyOption}\n\nimport java.net.HttpURLConnection\n\nimport org.apache.spark.sql.functions._\n\nimport org.apache.spark.sql.SQLContext\n\nimport org.apache.spark.input.PortableDataStream\n\nimport java.util.zip.ZipInputStream\n\nimport java.io.BufferedReader\n\nimport java.io.InputStreamReader\n"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578823484185_-1285362157",
+      "id": "20200112-100444_1627983331",
+      "dateCreated": "Jan 12, 2020 10:04:44 AM",
+      "dateStarted": "Jan 12, 2020 10:44:18 AM",
+      "dateFinished": "Jan 12, 2020 10:44:54 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n#### Etape 1 : extraction des données d\u0027une journée et stockage dans un bucket S3\nPour cela, on télécharge dans un premier temps un fichier CSV *masterfilelist.txt* qui  contient la liste des fichiers du jeu de données GDELT ainsi que l\u0027URL pour télécharger chaque fichier. Chaque fichier de données est accessible par HTTP. La fonction *fileDownloader* permet de télécharger un fichier. \nCe fichier est ensuite convertit en Data Frame, filtré sur la journée qui nous intéresse, puis grâce aux URL, on récupère les données GDELT et on les convertit en Data Frame également :\n\n- les events \n- le graphe des relations \n\n/!\\ Pour l\u0027instant on travaille en local avec une image docker ",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:45:01 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch4\u003eEtape 1 : extraction des données d\u0026rsquo;une journée et stockage dans un bucket S3\u003c/h4\u003e\n\u003cp\u003ePour cela, on télécharge dans un premier temps un fichier CSV \u003cem\u003emasterfilelist.txt\u003c/em\u003e qui contient la liste des fichiers du jeu de données GDELT ainsi que l\u0026rsquo;URL pour télécharger chaque fichier. Chaque fichier de données est accessible par HTTP. La fonction \u003cem\u003efileDownloader\u003c/em\u003e permet de télécharger un fichier.\u003cbr/\u003eCe fichier est ensuite convertit en Data Frame, filtré sur la journée qui nous intéresse, puis grâce aux URL, on récupère les données GDELT et on les convertit en Data Frame également :\u003c/p\u003e\n\u003cul\u003e\n  \u003cli\u003eles events\u003c/li\u003e\n  \u003cli\u003ele graphe des relations\u003c/li\u003e\n\u003c/ul\u003e\n\u003cp\u003e/!\\ Pour l\u0026rsquo;instant on travaille en local avec une image docker\u003c/p\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578822376797_1698743734",
+      "id": "20200112-094616_141408279",
+      "dateCreated": "Jan 12, 2020 9:46:16 AM",
+      "dateStarted": "Jan 12, 2020 10:45:01 AM",
+      "dateFinished": "Jan 12, 2020 10:45:02 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// Configuration de l\u0027accès au bucket S3\n    \n//val AWS_ID \u003d \"\"\n//val AWS_KEY \u003d \"\"\n// la classe AmazonS3Client n\u0027est pas serializable\n// on rajoute l\u0027annotation @transient pour dire a Spark de ne pas essayer de serialiser cette classe et l\u0027envoyer aux executeurs\n//@transient val awsClient \u003d new AmazonS3Client(new BasicAWSCredentials(AWS_ID, AWS_KEY))\n\n//sc.hadoopConfiguration.set(\"fs.s3a.access.key\", AWS_ID) // mettre votre ID du fichier credentials.csv\n//sc.hadoopConfiguration.set(\"fs.s3a.secret.key\", AWS_KEY) // mettre votre secret du fichier credentials.csv",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:44:18 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": true
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "jobName": "paragraph_1578824916887_569320701",
+      "id": "20200112-102836_1663931357",
+      "dateCreated": "Jan 12, 2020 10:28:36 AM",
+      "dateStarted": "Jan 12, 2020 10:44:18 AM",
+      "dateFinished": "Jan 12, 2020 10:44:57 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// Fonction fileDownloader\ndef fileDownloader(urlOfFileToDownload: String, fileName: String) \u003d {\n    val url \u003d new URL(urlOfFileToDownload)\n    val connection \u003d url.openConnection().asInstanceOf[HttpURLConnection]\n    connection.setConnectTimeout(5000)\n    connection.setReadTimeout(5000)\n    connection.connect()\n\n    if (connection.getResponseCode \u003e\u003d 400)\n        println(\"error\")\n    else\n        url #\u003e new File(fileName) !!\n}",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:44:18 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala"
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "\nwarning: there was one feature warning; re-run with -feature for details\n\nfileDownloader: (urlOfFileToDownload: String, fileName: String)Any\n"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578823434372_1699257654",
+      "id": "20200112-100354_934449719",
+      "dateCreated": "Jan 12, 2020 10:03:54 AM",
+      "dateStarted": "Jan 12, 2020 10:44:55 AM",
+      "dateFinished": "Jan 12, 2020 10:44:59 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// Téléchargement du fichier masterfilelist.txt et sauvegarde dans le dossier /tmp/ de l\u0027image docker utilisée\nfileDownloader(\"http://data.gdeltproject.org/gdeltv2/masterfilelist.txt\", \"/tmp/masterfilelist.txt\")",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:44:57 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala"
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "\nres47: Any \u003d \"\"\n"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578823557376_-502859515",
+      "id": "20200112-100557_1341750775",
+      "dateCreated": "Jan 12, 2020 10:05:57 AM",
+      "dateStarted": "Jan 12, 2020 10:44:57 AM",
+      "dateFinished": "Jan 12, 2020 10:45:30 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%sh\n# On vérifie que le fichier a bien été téléchargé avec la commande suivante :\nls -lrth /tmp |grep masterfilelist",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:44:20 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "sh",
+          "editOnDblClick": false
+        },
+        "editorMode": "ace/mode/sh"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "-rw-r--r--  1 root root  52M Jan 10 14:32 masterfilelist.txt\n"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578824036872_-535120415",
+      "id": "20200112-101356_1539990809",
+      "dateCreated": "Jan 12, 2020 10:13:56 AM",
+      "dateStarted": "Jan 12, 2020 10:44:20 AM",
+      "dateFinished": "Jan 12, 2020 10:44:27 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// Stockage du fichier masterfilelist.txt dans le bucket S3\n// awsClient.putObject(\"cochener-camille-telecom-gdelt2019\", \"masterfilelist.txt\", new File( \"/tmp/masterfilelist.txt\") )",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:45:00 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "jobName": "paragraph_1578824786564_603042331",
+      "id": "20200112-102626_1252193650",
+      "dateCreated": "Jan 12, 2020 10:26:26 AM",
+      "dateStarted": "Jan 12, 2020 10:45:00 AM",
+      "dateFinished": "Jan 12, 2020 10:45:34 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// Conversion du fichier en Data Frame\nval sqlContext \u003d new SQLContext(sc)\nval filesDF \u003d sqlContext.read.\n                    option(\"delimiter\",\" \").\n                    option(\"infer_schema\",\"true\").\n                    csv(\"/tmp/masterfilelist.txt\").\n                    withColumnRenamed(\"_c0\",\"size\").\n                    withColumnRenamed(\"_c1\",\"hash\").\n                    withColumnRenamed(\"_c2\",\"url\").\n                    cache",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:45:31 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "\nwarning: there was one deprecation warning; re-run with -deprecation for details\n\nsqlContext: org.apache.spark.sql.SQLContext \u003d org.apache.spark.sql.SQLContext@5514eff7\n\nfilesDF: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] \u003d [size: string, hash: string ... 1 more field]\n"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578824105897_-560990536",
+      "id": "20200112-101505_1386341713",
+      "dateCreated": "Jan 12, 2020 10:15:05 AM",
+      "dateStarted": "Jan 12, 2020 10:45:31 AM",
+      "dateFinished": "Jan 12, 2020 10:45:37 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// Filtre sur une journée de données (ex : 1er décembre 2019)\nval sampleDF \u003d filesDF.filter(col(\"url\").contains(\"/20191201\")).cache",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:45:34 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala"
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "\nsampleDF: org.apache.spark.sql.Dataset[org.apache.spark.sql.Row] \u003d [size: string, hash: string ... 1 more field]\n"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578824238360_1181338541",
+      "id": "20200112-101718_192309790",
+      "dateCreated": "Jan 12, 2020 10:17:18 AM",
+      "dateStarted": "Jan 12, 2020 10:45:34 AM",
+      "dateFinished": "Jan 12, 2020 10:45:38 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// Chargement des fichiers de données dans l\u0027image Docker (plus tard, ce sera dans le bucket S3)\n/*\nobject AwsClient{\n    val s3 \u003d new AmazonS3Client(new BasicAWSCredentials(AWS_ID, AWS_KEY))\n}\n*/\nsampleDF.select(\"url\").repartition(100).foreach( r\u003d\u003e {\n            val URL \u003d r.getAs[String](0)\n            val fileName \u003d r.getAs[String](0).split(\"/\").last\n            val dir \u003d \"/tmp/\"\n            val localFileName \u003d dir + fileName\n            fileDownloader(URL,  localFileName)\n            //val localFile \u003d new File(localFileName)\n            ///AwsClient.s3.putObject(\"john-doe-telecom-gdelt2018\", fileName, localFile )\n            //localFile.delete()\n            \n})",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:45:38 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala"
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": []
+      },
+      "apps": [],
+      "jobName": "paragraph_1578824666802_-1048885555",
+      "id": "20200112-102426_1145804725",
+      "dateCreated": "Jan 12, 2020 10:24:26 AM",
+      "dateStarted": "Jan 12, 2020 10:45:38 AM",
+      "dateFinished": "Jan 12, 2020 10:52:59 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%sh\n# On vérifie que les fichiers ont bien été téléchargés dans le dossier /tmp/ de l\u0027image Docker\nls -lrth /tmp | grep -i -n 2019",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:44:23 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "sh",
+          "editOnDblClick": false
+        },
+        "editorMode": "ace/mode/sh"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "10:-rw-r--r--  1 root root  77K Jan 10 15:03 20191201011500.export.CSV.zip\n11:-rw-r--r--  1 root root  83K Jan 10 15:03 20191201093000.mentions.CSV.zip\n12:-rw-r--r--  1 root root 3.9M Jan 10 15:04 20191201010000.gkg.csv.zip\n13:-rw-r--r--  1 root root  59K Jan 10 15:04 20191201093000.export.CSV.zip\n14:-rw-r--r--  1 root root 5.0M Jan 10 15:04 20191201174500.gkg.csv.zip\n15:-rw-r--r--  1 root root 132K Jan 10 15:04 20191201174500.mentions.CSV.zip\n16:-rw-r--r--  1 root root  92K Jan 10 15:04 20191201011500.mentions.CSV.zip\n17:-rw-r--r--  1 root root 3.9M Jan 10 15:04 20191201011500.gkg.csv.zip\n18:-rw-r--r--  1 root root  49K Jan 10 15:04 20191201094500.export.CSV.zip\n19:-rw-r--r--  1 root root 3.1M Jan 10 15:04 20191201093000.gkg.csv.zip\n20:-rw-r--r--  1 root root 109K Jan 10 15:04 20191201180000.mentions.CSV.zip\n21:-rw-r--r--  1 root root  53K Jan 10 15:04 20191201180000.export.CSV.zip\n22:-rw-r--r--  1 root root  56K Jan 10 15:04 20191201013000.export.CSV.zip\n23:-rw-r--r--  1 root root  70K Jan 10 15:04 20191201013000.mentions.CSV.zip\n24:-rw-r--r--  1 root root  68K Jan 10 15:04 20191201094500.mentions.CSV.zip\n25:-rw-r--r--  1 root root 3.2M Jan 10 15:04 20191201094500.gkg.csv.zip\n26:-rw-r--r--  1 root root  53K Jan 10 15:04 20191201181500.export.CSV.zip\n27:-rw-r--r--  1 root root 4.1M Jan 10 15:04 20191201180000.gkg.csv.zip\n28:-rw-r--r--  1 root root  56K Jan 10 15:04 20191201014500.export.CSV.zip\n29:-rw-r--r--  1 root root  68K Jan 10 15:04 20191201100000.mentions.CSV.zip\n30:-rw-r--r--  1 root root 3.4M Jan 10 15:04 20191201013000.gkg.csv.zip\n31:-rw-r--r--  1 root root  48K Jan 10 15:04 20191201100000.export.CSV.zip\n32:-rw-r--r--  1 root root 100K Jan 10 15:04 20191201181500.mentions.CSV.zip\n33:-rw-r--r--  1 root root  68K Jan 10 15:04 20191201014500.mentions.CSV.zip\n34:-rw-r--r--  1 root root 3.9M Jan 10 15:04 20191201181500.gkg.csv.zip\n35:-rw-r--r--  1 root root 3.0M Jan 10 15:04 20191201100000.gkg.csv.zip\n36:-rw-r--r--  1 root root 3.3M Jan 10 15:04 20191201014500.gkg.csv.zip\n37:-rw-r--r--  1 root root  61K Jan 10 15:04 20191201183000.export.CSV.zip\n38:-rw-r--r--  1 root root  49K Jan 10 15:04 20191201101500.export.CSV.zip\n39:-rw-r--r--  1 root root  67K Jan 10 15:04 20191201020000.export.CSV.zip\n40:-rw-r--r--  1 root root 141K Jan 10 15:04 20191201183000.mentions.CSV.zip\n41:-rw-r--r--  1 root root  70K Jan 10 15:04 20191201101500.mentions.CSV.zip\n42:-rw-r--r--  1 root root  90K Jan 10 15:04 20191201020000.mentions.CSV.zip\n43:-rw-r--r--  1 root root 3.0M Jan 10 15:04 20191201101500.gkg.csv.zip\n44:-rw-r--r--  1 root root  48K Jan 10 15:04 20191201184500.export.CSV.zip\n45:-rw-r--r--  1 root root 5.6M Jan 10 15:04 20191201183000.gkg.csv.zip\n46:-rw-r--r--  1 root root  42K Jan 10 15:04 20191201021500.export.CSV.zip\n47:-rw-r--r--  1 root root  80K Jan 10 15:04 20191201103000.mentions.CSV.zip\n48:-rw-r--r--  1 root root 3.6M Jan 10 15:04 20191201020000.gkg.csv.zip\n49:-rw-r--r--  1 root root  57K Jan 10 15:04 20191201103000.export.CSV.zip\n50:-rw-r--r--  1 root root 127K Jan 10 15:04 20191201184500.mentions.CSV.zip\n51:-rw-r--r--  1 root root  71K Jan 10 15:04 20191201021500.mentions.CSV.zip\n52:-rw-r--r--  1 root root 4.4M Jan 10 15:04 20191201184500.gkg.csv.zip\n53:-rw-r--r--  1 root root 3.1M Jan 10 15:04 20191201021500.gkg.csv.zip\n54:-rw-r--r--  1 root root  49K Jan 10 15:04 20191201104500.export.CSV.zip\n55:-rw-r--r--  1 root root 3.4M Jan 10 15:04 20191201103000.gkg.csv.zip\n56:-rw-r--r--  1 root root 122K Jan 10 15:04 20191201190000.mentions.CSV.zip\n57:-rw-r--r--  1 root root  54K Jan 10 15:04 20191201190000.export.CSV.zip\n58:-rw-r--r--  1 root root  47K Jan 10 15:04 20191201023000.export.CSV.zip\n59:-rw-r--r--  1 root root  69K Jan 10 15:04 20191201023000.mentions.CSV.zip\n60:-rw-r--r--  1 root root  78K Jan 10 15:04 20191201104500.mentions.CSV.zip\n61:-rw-r--r--  1 root root 3.3M Jan 10 15:04 20191201104500.gkg.csv.zip\n62:-rw-r--r--  1 root root  51K Jan 10 15:04 20191201191500.export.CSV.zip\n63:-rw-r--r--  1 root root 4.3M Jan 10 15:04 20191201190000.gkg.csv.zip\n64:-rw-r--r--  1 root root  55K Jan 10 15:04 20191201024500.export.CSV.zip\n65:-rw-r--r--  1 root root  86K Jan 10 15:04 20191201110000.mentions.CSV.zip\n66:-rw-r--r--  1 root root 3.3M Jan 10 15:04 20191201023000.gkg.csv.zip\n67:-rw-r--r--  1 root root  56K Jan 10 15:04 20191201110000.export.CSV.zip\n68:-rw-r--r--  1 root root 130K Jan 10 15:04 20191201191500.mentions.CSV.zip\n69:-rw-r--r--  1 root root  80K Jan 10 15:04 20191201024500.mentions.CSV.zip\n70:-rw-r--r--  1 root root 4.6M Jan 10 15:04 20191201191500.gkg.csv.zip\n71:-rw-r--r--  1 root root 3.2M Jan 10 15:04 20191201110000.gkg.csv.zip\n72:-rw-r--r--  1 root root  73K Jan 10 15:04 20191201193000.export.CSV.zip\n73:-rw-r--r--  1 root root 3.3M Jan 10 15:04 20191201024500.gkg.csv.zip\n74:-rw-r--r--  1 root root  46K Jan 10 15:04 20191201111500.export.CSV.zip\n75:-rw-r--r--  1 root root  50K Jan 10 15:04 20191201030000.export.CSV.zip\n76:-rw-r--r--  1 root root  80K Jan 10 15:04 20191201111500.mentions.CSV.zip\n77:-rw-r--r--  1 root root 138K Jan 10 15:04 20191201193000.mentions.CSV.zip\n78:-rw-r--r--  1 root root  80K Jan 10 15:04 20191201030000.mentions.CSV.zip\n79:-rw-r--r--  1 root root 5.1M Jan 10 15:04 20191201193000.gkg.csv.zip\n80:-rw-r--r--  1 root root 3.1M Jan 10 15:04 20191201111500.gkg.csv.zip\n81:-rw-r--r--  1 root root  66K Jan 10 15:04 20191201194500.export.CSV.zip\n82:-rw-r--r--  1 root root  52K Jan 10 15:04 20191201031500.export.CSV.zip\n83:-rw-r--r--  1 root root  91K Jan 10 15:04 20191201113000.mentions.CSV.zip\n84:-rw-r--r--  1 root root 4.6M Jan 10 15:04 20191201194500.gkg.csv.zip\n85:-rw-r--r--  1 root root 3.6M Jan 10 15:04 20191201030000.gkg.csv.zip\n86:-rw-r--r--  1 root root  64K Jan 10 15:04 20191201031500.mentions.CSV.zip\n87:-rw-r--r--  1 root root  57K Jan 10 15:04 20191201113000.export.CSV.zip\n88:-rw-r--r--  1 root root 116K Jan 10 15:04 20191201194500.mentions.CSV.zip\n89:-rw-r--r--  1 root root 2.9M Jan 10 15:04 20191201031500.gkg.csv.zip\n90:-rw-r--r--  1 root root  64K Jan 10 15:04 20191201114500.export.CSV.zip\n91:-rw-r--r--  1 root root 121K Jan 10 15:04 20191201200000.mentions.CSV.zip\n92:-rw-r--r--  1 root root 3.4M Jan 10 15:04 20191201113000.gkg.csv.zip\n93:-rw-r--r--  1 root root  41K Jan 10 15:04 20191201033000.export.CSV.zip\n94:-rw-r--r--  1 root root  62K Jan 10 15:04 20191201200000.export.CSV.zip\n95:-rw-r--r--  1 root root  90K Jan 10 15:04 20191201114500.mentions.CSV.zip\n96:-rw-r--r--  1 root root  65K Jan 10 15:04 20191201033000.mentions.CSV.zip\n97:-rw-r--r--  1 root root 4.4M Jan 10 15:04 20191201200000.gkg.csv.zip\n98:-rw-r--r--  1 root root 3.5M Jan 10 15:04 20191201114500.gkg.csv.zip\n99:-rw-r--r--  1 root root  49K Jan 10 15:04 20191201201500.export.CSV.zip\n100:-rw-r--r--  1 root root 3.2M Jan 10 15:04 20191201033000.gkg.csv.zip\n101:-rw-r--r--  1 root root  38K Jan 10 15:04 20191201034500.export.CSV.zip\n102:-rw-r--r--  1 root root  40K Jan 10 15:04 20191201120000.export.CSV.zip\n103:-rw-r--r--  1 root root  64K Jan 10 15:04 20191201120000.mentions.CSV.zip\n104:-rw-r--r--  1 root root 111K Jan 10 15:04 20191201201500.mentions.CSV.zip\n105:-rw-r--r--  1 root root  57K Jan 10 15:04 20191201034500.mentions.CSV.zip\n106:-rw-r--r--  1 root root 2.8M Jan 10 15:05 20191201120000.gkg.csv.zip\n107:-rw-r--r--  1 root root 4.3M Jan 10 15:05 20191201201500.gkg.csv.zip\n108:-rw-r--r--  1 root root  66K Jan 10 15:05 20191201203000.export.CSV.zip\n109:-rw-r--r--  1 root root  38K Jan 10 15:05 20191201040000.export.CSV.zip\n110:-rw-r--r--  1 root root  80K Jan 10 15:05 20191201121500.mentions.CSV.zip\n111:-rw-r--r--  1 root root 2.8M Jan 10 15:05 20191201034500.gkg.csv.zip\n112:-rw-r--r--  1 root root  52K Jan 10 15:05 20191201121500.export.CSV.zip\n113:-rw-r--r--  1 root root 155K Jan 10 15:05 20191201203000.mentions.CSV.zip\n114:-rw-r--r--  1 root root 5.7M Jan 10 15:05 20191201203000.gkg.csv.zip\n115:-rw-r--r--  1 root root  76K Jan 10 15:05 20191201040000.mentions.CSV.zip\n116:-rw-r--r--  1 root root 3.1M Jan 10 15:05 20191201121500.gkg.csv.zip\n117:-rw-r--r--  1 root root  51K Jan 10 15:05 20191201204500.export.CSV.zip\n118:-rw-r--r--  1 root root 3.4M Jan 10 15:05 20191201040000.gkg.csv.zip\n119:-rw-r--r--  1 root root  51K Jan 10 15:05 20191201041500.export.CSV.zip\n120:-rw-r--r--  1 root root  64K Jan 10 15:05 20191201123000.export.CSV.zip\n121:-rw-r--r--  1 root root  83K Jan 10 15:05 20191201123000.mentions.CSV.zip\n122:-rw-r--r--  1 root root 113K Jan 10 15:05 20191201204500.mentions.CSV.zip\n123:-rw-r--r--  1 root root  70K Jan 10 15:05 20191201041500.mentions.CSV.zip\n124:-rw-r--r--  1 root root 3.3M Jan 10 15:05 20191201123000.gkg.csv.zip\n125:-rw-r--r--  1 root root 4.2M Jan 10 15:05 20191201204500.gkg.csv.zip\n126:-rw-r--r--  1 root root  60K Jan 10 15:05 20191201210000.export.CSV.zip\n127:-rw-r--r--  1 root root  40K Jan 10 15:05 20191201043000.export.CSV.zip\n128:-rw-r--r--  1 root root  91K Jan 10 15:05 20191201124500.mentions.CSV.zip\n129:-rw-r--r--  1 root root 3.3M Jan 10 15:05 20191201041500.gkg.csv.zip\n130:-rw-r--r--  1 root root  66K Jan 10 15:05 20191201124500.export.CSV.zip\n131:-rw-r--r--  1 root root 120K Jan 10 15:05 20191201210000.mentions.CSV.zip\n132:-rw-r--r--  1 root root  68K Jan 10 15:05 20191201043000.mentions.CSV.zip\n133:-rw-r--r--  1 root root 4.4M Jan 10 15:05 20191201210000.gkg.csv.zip\n134:-rw-r--r--  1 root root 3.9M Jan 10 15:05 20191201124500.gkg.csv.zip\n135:-rw-r--r--  1 root root 2.7M Jan 10 15:06 20191201043000.gkg.csv.zip\n136:-rw-r--r--  1 root root  61K Jan 10 15:06 20191201211500.export.CSV.zip\n137:-rw-r--r--  1 root root  60K Jan 10 15:06 20191201130000.export.CSV.zip\n138:-rw-r--r--  1 root root  46K Jan 10 15:06 20191201044500.export.CSV.zip\n139:-rw-r--r--  1 root root 129K Jan 10 15:06 20191201211500.mentions.CSV.zip\n140:-rw-r--r--  1 root root  90K Jan 10 15:06 20191201130000.mentions.CSV.zip\n141:-rw-r--r--  1 root root  79K Jan 10 15:06 20191201044500.mentions.CSV.zip\n142:-rw-r--r--  1 root root 3.2M Jan 10 15:06 20191201130000.gkg.csv.zip\n143:-rw-r--r--  1 root root  42K Jan 10 15:06 20191201213000.export.CSV.zip\n144:-rw-r--r--  1 root root 4.3M Jan 10 15:06 20191201211500.gkg.csv.zip\n145:-rw-r--r--  1 root root  40K Jan 10 15:06 20191201050000.export.CSV.zip\n146:-rw-r--r--  1 root root  86K Jan 10 15:06 20191201131500.mentions.CSV.zip\n147:-rw-r--r--  1 root root 3.0M Jan 10 15:06 20191201044500.gkg.csv.zip\n148:-rw-r--r--  1 root root  45K Jan 10 15:06 20191201131500.export.CSV.zip\n149:-rw-r--r--  1 root root 108K Jan 10 15:06 20191201213000.mentions.CSV.zip\n150:-rw-r--r--  1 root root  64K Jan 10 15:06 20191201050000.mentions.CSV.zip\n151:-rw-r--r--  1 root root 4.0M Jan 10 15:06 20191201213000.gkg.csv.zip\n152:-rw-r--r--  1 root root 3.2M Jan 10 15:06 20191201131500.gkg.csv.zip\n153:-rw-r--r--  1 root root  38K Jan 10 15:06 20191201214500.export.CSV.zip\n154:-rw-r--r--  1 root root 3.0M Jan 10 15:06 20191201050000.gkg.csv.zip\n155:-rw-r--r--  1 root root  49K Jan 10 15:06 20191201051500.export.CSV.zip\n156:-rw-r--r--  1 root root  58K Jan 10 15:06 20191201133000.export.CSV.zip\n157:-rw-r--r--  1 root root  88K Jan 10 15:06 20191201133000.mentions.CSV.zip\n158:-rw-r--r--  1 root root 103K Jan 10 15:06 20191201214500.mentions.CSV.zip\n159:-rw-r--r--  1 root root  66K Jan 10 15:06 20191201051500.mentions.CSV.zip\n160:-rw-r--r--  1 root root 4.2M Jan 10 15:06 20191201214500.gkg.csv.zip\n161:-rw-r--r--  1 root root 3.6M Jan 10 15:06 20191201133000.gkg.csv.zip\n162:-rw-r--r--  1 root root  52K Jan 10 15:06 20191201220000.export.CSV.zip\n163:-rw-r--r--  1 root root  68K Jan 10 15:06 20191201053000.export.CSV.zip\n164:-rw-r--r--  1 root root 2.8M Jan 10 15:06 20191201051500.gkg.csv.zip\n165:-rw-r--r--  1 root root  86K Jan 10 15:06 20191201134500.mentions.CSV.zip\n166:-rw-r--r--  1 root root  49K Jan 10 15:06 20191201134500.export.CSV.zip\n167:-rw-r--r--  1 root root 109K Jan 10 15:06 20191201220000.mentions.CSV.zip\n168:-rw-r--r--  1 root root  85K Jan 10 15:06 20191201053000.mentions.CSV.zip\n169:-rw-r--r--  1 root root 4.1M Jan 10 15:06 20191201220000.gkg.csv.zip\n170:-rw-r--r--  1 root root 3.7M Jan 10 15:06 20191201134500.gkg.csv.zip\n171:-rw-r--r--  1 root root  40K Jan 10 15:06 20191201221500.export.CSV.zip\n172:-rw-r--r--  1 root root 3.8M Jan 10 15:06 20191201053000.gkg.csv.zip\n173:-rw-r--r--  1 root root  56K Jan 10 15:06 20191201054500.export.CSV.zip\n174:-rw-r--r--  1 root root  54K Jan 10 15:06 20191201140000.export.CSV.zip\n175:-rw-r--r--  1 root root 100K Jan 10 15:06 20191201140000.mentions.CSV.zip\n176:-rw-r--r--  1 root root 104K Jan 10 15:06 20191201221500.mentions.CSV.zip\n177:-rw-r--r--  1 root root  76K Jan 10 15:06 20191201054500.mentions.CSV.zip\n178:-rw-r--r--  1 root root 4.4M Jan 10 15:06 20191201221500.gkg.csv.zip\n179:-rw-r--r--  1 root root 3.7M Jan 10 15:06 20191201140000.gkg.csv.zip\n180:-rw-r--r--  1 root root  49K Jan 10 15:06 20191201223000.export.CSV.zip\n181:-rw-r--r--  1 root root 3.4M Jan 10 15:06 20191201054500.gkg.csv.zip\n182:-rw-r--r--  1 root root  51K Jan 10 15:06 20191201060000.export.CSV.zip\n183:-rw-r--r--  1 root root  52K Jan 10 15:06 20191201141500.export.CSV.zip\n184:-rw-r--r--  1 root root 107K Jan 10 15:06 20191201141500.mentions.CSV.zip\n185:-rw-r--r--  1 root root 104K Jan 10 15:06 20191201223000.mentions.CSV.zip\n186:-rw-r--r--  1 root root  76K Jan 10 15:06 20191201060000.mentions.CSV.zip\n187:-rw-r--r--  1 root root 4.3M Jan 10 15:06 20191201223000.gkg.csv.zip\n188:-rw-r--r--  1 root root 3.9M Jan 10 15:06 20191201141500.gkg.csv.zip\n189:-rw-r--r--  1 root root  61K Jan 10 15:06 20191201224500.export.CSV.zip\n190:-rw-r--r--  1 root root  48K Jan 10 15:06 20191201061500.export.CSV.zip\n191:-rw-r--r--  1 root root 112K Jan 10 15:06 20191201143000.mentions.CSV.zip\n192:-rw-r--r--  1 root root 3.3M Jan 10 15:06 20191201060000.gkg.csv.zip\n193:-rw-r--r--  1 root root  66K Jan 10 15:06 20191201143000.export.CSV.zip\n194:-rw-r--r--  1 root root 122K Jan 10 15:06 20191201224500.mentions.CSV.zip\n195:-rw-r--r--  1 root root 4.4M Jan 10 15:06 20191201224500.gkg.csv.zip\n196:-rw-r--r--  1 root root  73K Jan 10 15:06 20191201061500.mentions.CSV.zip\n197:-rw-r--r--  1 root root 3.1M Jan 10 15:06 20191201061500.gkg.csv.zip\n198:-rw-r--r--  1 root root  68K Jan 10 15:06 20191201144500.export.CSV.zip\n199:-rw-r--r--  1 root root 4.2M Jan 10 15:06 20191201143000.gkg.csv.zip\n200:-rw-r--r--  1 root root 102K Jan 10 15:06 20191201230000.mentions.CSV.zip\n201:-rw-r--r--  1 root root  45K Jan 10 15:06 20191201230000.export.CSV.zip\n202:-rw-r--r--  1 root root  68K Jan 10 15:06 20191201063000.export.CSV.zip\n203:-rw-r--r--  1 root root 109K Jan 10 15:06 20191201144500.mentions.CSV.zip\n204:-rw-r--r--  1 root root 101K Jan 10 15:06 20191201063000.mentions.CSV.zip\n205:-rw-r--r--  1 root root 4.6M Jan 10 15:06 20191201230000.gkg.csv.zip\n206:-rw-r--r--  1 root root 4.4M Jan 10 15:06 20191201144500.gkg.csv.zip\n207:-rw-r--r--  1 root root  36K Jan 10 15:06 20191201231500.export.CSV.zip\n208:-rw-r--r--  1 root root  54K Jan 10 15:06 20191201064500.export.CSV.zip\n209:-rw-r--r--  1 root root 107K Jan 10 15:06 20191201150000.mentions.CSV.zip\n210:-rw-r--r--  1 root root 4.0M Jan 10 15:06 20191201231500.gkg.csv.zip\n211:-rw-r--r--  1 root root 3.9M Jan 10 15:06 20191201063000.gkg.csv.zip\n212:-rw-r--r--  1 root root  67K Jan 10 15:06 20191201150000.export.CSV.zip\n213:-rw-r--r--  1 root root  70K Jan 10 15:06 20191201064500.mentions.CSV.zip\n214:-rw-r--r--  1 root root  91K Jan 10 15:06 20191201231500.mentions.CSV.zip\n215:-rw-r--r--  1 root root 3.9M Jan 10 15:06 20191201150000.gkg.csv.zip\n216:-rw-r--r--  1 root root  67K Jan 10 15:06 20191201233000.export.CSV.zip\n217:-rw-r--r--  1 root root 3.0M Jan 10 15:06 20191201064500.gkg.csv.zip\n218:-rw-r--r--  1 root root  45K Jan 10 15:06 20191201070000.export.CSV.zip\n219:-rw-r--r--  1 root root  53K Jan 10 15:06 20191201151500.export.CSV.zip\n220:-rw-r--r--  1 root root 111K Jan 10 15:06 20191201151500.mentions.CSV.zip\n221:-rw-r--r--  1 root root 125K Jan 10 15:06 20191201233000.mentions.CSV.zip\n222:-rw-r--r--  1 root root  72K Jan 10 15:06 20191201070000.mentions.CSV.zip\n223:-rw-r--r--  1 root root 5.4M Jan 10 15:06 20191201233000.gkg.csv.zip\n224:-rw-r--r--  1 root root 3.2M Jan 10 15:06 20191201070000.gkg.csv.zip\n225:-rw-r--r--  1 root root 4.1M Jan 10 15:06 20191201151500.gkg.csv.zip\n226:-rw-r--r--  1 root root  71K Jan 10 15:06 20191201153000.export.CSV.zip\n227:-rw-r--r--  1 root root  42K Jan 10 15:06 20191201234500.export.CSV.zip\n228:-rw-r--r--  1 root root  88K Jan 10 15:06 20191201234500.mentions.CSV.zip\n229:-rw-r--r--  1 root root  52K Jan 10 15:06 20191201071500.mentions.CSV.zip\n230:-rw-r--r--  1 root root  29K Jan 10 15:06 20191201071500.export.CSV.zip\n231:-rw-r--r--  1 root root 142K Jan 10 15:06 20191201153000.mentions.CSV.zip\n232:-rw-r--r--  1 root root 5.1M Jan 10 15:06 20191201153000.gkg.csv.zip\n233:-rw-r--r--  1 root root 2.7M Jan 10 15:07 20191201071500.gkg.csv.zip\n234:-rw-r--r--  1 root root  63K Jan 10 15:07 20191201154500.export.CSV.zip\n235:-rw-r--r--  1 root root  64K Jan 10 15:07 20191201073000.export.CSV.zip\n236:-rw-r--r--  1 root root 4.2M Jan 10 15:07 20191201234500.gkg.csv.zip\n237:-rw-r--r--  1 root root 130K Jan 10 15:07 20191201154500.mentions.CSV.zip\n238:-rw-r--r--  1 root root  79K Jan 10 15:07 20191201073000.mentions.CSV.zip\n239:-rw-r--r--  1 root root 3.4M Jan 10 15:07 20191201073000.gkg.csv.zip\n240:-rw-r--r--  1 root root 4.7M Jan 10 15:07 20191201154500.gkg.csv.zip\n241:-rw-r--r--  1 root root  55K Jan 10 15:07 20191201074500.export.CSV.zip\n242:-rw-r--r--  1 root root  69K Jan 10 15:07 20191201160000.export.CSV.zip\n243:-rw-r--r--  1 root root 140K Jan 10 15:07 20191201160000.mentions.CSV.zip\n244:-rw-r--r--  1 root root  82K Jan 10 15:07 20191201074500.mentions.CSV.zip\n245:-rw-r--r--  1 root root 3.2M Jan 10 15:07 20191201074500.gkg.csv.zip\n246:-rw-r--r--  1 root root  67K Jan 10 15:07 20191201161500.export.CSV.zip\n247:-rw-r--r--  1 root root  51K Jan 10 15:07 20191201080000.export.CSV.zip\n248:-rw-r--r--  1 root root 5.3M Jan 10 15:07 20191201160000.gkg.csv.zip\n249:-rw-r--r--  1 root root 148K Jan 10 15:07 20191201161500.mentions.CSV.zip\n250:-rw-r--r--  1 root root  72K Jan 10 15:07 20191201080000.mentions.CSV.zip\n251:-rw-r--r--  1 root root 3.1M Jan 10 15:07 20191201080000.gkg.csv.zip\n252:-rw-r--r--  1 root root 4.9M Jan 10 15:07 20191201161500.gkg.csv.zip\n253:-rw-r--r--  1 root root  76K Jan 10 15:07 20191201163000.export.CSV.zip\n254:-rw-r--r--  1 root root  59K Jan 10 15:07 20191201081500.export.CSV.zip\n255:-rw-r--r--  1 root root  92K Jan 10 15:07 20191201000000.export.CSV.zip\n256:-rw-r--r--  1 root root  81K Jan 10 15:07 20191201081500.mentions.CSV.zip\n257:-rw-r--r--  1 root root 129K Jan 10 15:07 20191201163000.mentions.CSV.zip\n258:-rw-r--r--  1 root root  71K Jan 10 15:07 20191201000000.mentions.CSV.zip\n259:-rw-r--r--  1 root root 2.9M Jan 10 15:07 20191201081500.gkg.csv.zip\n260:-rw-r--r--  1 root root 4.6M Jan 10 15:07 20191201163000.gkg.csv.zip\n261:-rw-r--r--  1 root root  50K Jan 10 15:07 20191201164500.export.CSV.zip\n262:-rw-r--r--  1 root root  66K Jan 10 15:07 20191201001500.export.CSV.zip\n263:-rw-r--r--  1 root root  77K Jan 10 15:07 20191201083000.mentions.CSV.zip\n264:-rw-r--r--  1 root root 3.6M Jan 10 15:07 20191201000000.gkg.csv.zip\n265:-rw-r--r--  1 root root  66K Jan 10 15:07 20191201083000.export.CSV.zip\n266:-rw-r--r--  1 root root 108K Jan 10 15:07 20191201164500.mentions.CSV.zip\n267:-rw-r--r--  1 root root  73K Jan 10 15:07 20191201001500.mentions.CSV.zip\n268:-rw-r--r--  1 root root 4.0M Jan 10 15:07 20191201164500.gkg.csv.zip\n269:-rw-r--r--  1 root root 3.4M Jan 10 15:07 20191201083000.gkg.csv.zip\n270:-rw-r--r--  1 root root  64K Jan 10 15:07 20191201170000.export.CSV.zip\n271:-rw-r--r--  1 root root 107K Jan 10 15:07 20191201003000.export.CSV.zip\n272:-rw-r--r--  1 root root 3.9M Jan 10 15:07 20191201001500.gkg.csv.zip\n273:-rw-r--r--  1 root root  72K Jan 10 15:07 20191201084500.mentions.CSV.zip\n274:-rw-r--r--  1 root root  48K Jan 10 15:07 20191201084500.export.CSV.zip\n275:-rw-r--r--  1 root root 123K Jan 10 15:07 20191201170000.mentions.CSV.zip\n276:-rw-r--r--  1 root root  99K Jan 10 15:07 20191201003000.mentions.CSV.zip\n277:-rw-r--r--  1 root root 4.7M Jan 10 15:07 20191201170000.gkg.csv.zip\n278:-rw-r--r--  1 root root 3.2M Jan 10 15:07 20191201084500.gkg.csv.zip\n279:-rw-r--r--  1 root root  62K Jan 10 15:07 20191201171500.export.CSV.zip\n280:-rw-r--r--  1 root root  79K Jan 10 15:07 20191201004500.export.CSV.zip\n281:-rw-r--r--  1 root root 4.9M Jan 10 15:07 20191201003000.gkg.csv.zip\n282:-rw-r--r--  1 root root  62K Jan 10 15:07 20191201090000.mentions.CSV.zip\n283:-rw-r--r--  1 root root  41K Jan 10 15:07 20191201090000.export.CSV.zip\n284:-rw-r--r--  1 root root 120K Jan 10 15:07 20191201171500.mentions.CSV.zip\n285:-rw-r--r--  1 root root 4.4M Jan 10 15:07 20191201171500.gkg.csv.zip\n286:-rw-r--r--  1 root root  87K Jan 10 15:07 20191201004500.mentions.CSV.zip\n287:-rw-r--r--  1 root root 2.9M Jan 10 15:08 20191201090000.gkg.csv.zip\n288:-rw-r--r--  1 root root  54K Jan 10 15:08 20191201173000.export.CSV.zip\n289:-rw-r--r--  1 root root  60K Jan 10 15:08 20191201010000.export.CSV.zip\n290:-rw-r--r--  1 root root 3.9M Jan 10 15:08 20191201004500.gkg.csv.zip\n291:-rw-r--r--  1 root root  75K Jan 10 15:08 20191201091500.mentions.CSV.zip\n292:-rw-r--r--  1 root root  53K Jan 10 15:08 20191201091500.export.CSV.zip\n293:-rw-r--r--  1 root root 125K Jan 10 15:08 20191201173000.mentions.CSV.zip\n294:-rw-r--r--  1 root root  79K Jan 10 15:08 20191201010000.mentions.CSV.zip\n295:-rw-r--r--  1 root root 4.6M Jan 10 15:08 20191201173000.gkg.csv.zip\n296:-rw-r--r--  1 root root 3.2M Jan 10 15:08 20191201091500.gkg.csv.zip\n297:-rw-r--r--  1 root root  61K Jan 10 15:08 20191201174500.export.CSV.zip\n"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578825039709_-1761302601",
+      "id": "20200112-103039_1656264563",
+      "dateCreated": "Jan 12, 2020 10:30:39 AM",
+      "dateStarted": "Jan 12, 2020 10:44:23 AM",
+      "dateFinished": "Jan 12, 2020 10:44:27 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "// Décompression des fichiers et transformation en Data Frame\n\n// Jeu de données events\nval events_RDD \u003d sc.binaryFiles(\"/tmp/20191201[0-9]*.export.CSV.zip\").\n   flatMap {  // decompresser les fichiers\n       case (name: String, content: PortableDataStream) \u003d\u003e\n          val zis \u003d new ZipInputStream(content.open)\n          Stream.continually(zis.getNextEntry).\n                takeWhile{case null \u003d\u003e zis.close(); false\n                       case _ \u003d\u003e true}.\n                flatMap { _ \u003d\u003e\n                    val br \u003d new BufferedReader(new InputStreamReader(zis))\n                    Stream.continually(br.readLine()).takeWhile(_ !\u003d null)\n                }\n    }\nval events_DF \u003d events_RDD.map(x \u003d\u003e x.split(\"\\t\")).map(row \u003d\u003e row.mkString(\";\")).map(x \u003d\u003e x.split(\";\")).toDF()\n\n// Jeu de données du graphe des relations\nval gkg_RDD \u003d sc.binaryFiles(\"/tmp/20191201[0-9]*.gkg.csv.zip\").\n   flatMap {  // decompresser les fichiers\n       case (name: String, content: PortableDataStream) \u003d\u003e\n          val zis \u003d new ZipInputStream(content.open)\n          Stream.continually(zis.getNextEntry).\n                takeWhile{case null \u003d\u003e zis.close(); false\n                       case _ \u003d\u003e true}.\n                flatMap { _ \u003d\u003e\n                    val br \u003d new BufferedReader(new InputStreamReader(zis))\n                    Stream.continually(br.readLine()).takeWhile(_ !\u003d null)\n                }\n    }\nval gkg_DF \u003d gkg_RDD.map(x \u003d\u003e x.split(\"\\t\")).map(row \u003d\u003e row.mkString(\";\")).map(x \u003d\u003e x.split(\";\")).toDF()",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:56:28 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala",
+          "editOnDblClick": false
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "\nevents_RDD: org.apache.spark.rdd.RDD[String] \u003d MapPartitionsRDD[69] at flatMap at \u003cconsole\u003e:75\n\nevents_DF: org.apache.spark.sql.DataFrame \u003d [value: array\u003cstring\u003e]\n\ngkg_RDD: org.apache.spark.rdd.RDD[String] \u003d MapPartitionsRDD[74] at flatMap at \u003cconsole\u003e:74\n\ngkg_DF: org.apache.spark.sql.DataFrame \u003d [value: array\u003cstring\u003e]\n"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578825083773_-390750398",
+      "id": "20200112-103123_1652098066",
+      "dateCreated": "Jan 12, 2020 10:31:23 AM",
+      "dateStarted": "Jan 12, 2020 10:56:28 AM",
+      "dateFinished": "Jan 12, 2020 10:56:35 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "events_DF.show(false)",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:56:45 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala"
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "TEXT",
+            "data": "+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\n|value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |\n+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\n|[890039545, 20181201, 201812, 2018, 2018.9068, ISR, ISRAELI, ISR, , , , , , , , MED, JOURNALIST, , , , , , MED, , , 0, 182, 182, 18, 4, -9.5, 10, 1, 10, -5.07011866235168, 4, Gaza, Israel (general), Israel, IS, IS00, 18315, 31.4167, 34.3333, -797156, 4, Gaza, Israel (general), Israel, IS, IS00, 18315, 31.4167, 34.3333, -797156, 4, Gaza, Israel (general), Israel, IS, IS00, 18315, 31.4167, 34.3333, -797156, 20191201033000, http://www.palestinemonitor.org/details.php?id\u003dwzdwe4a24980yxl7df7gpz]                |\n|[890039546, 20181201, 201812, 2018, 2018.9068, ISR, ISRAELI, ISR, , , , , , , , MED, JOURNALIST, , , , , , MED, , , 0, 190, 190, 19, 4, -10.0, 10, 1, 10, -5.07011866235168, 4, Gaza, Israel (general), Israel, IS, IS00, 18315, 31.4167, 34.3333, -797156, 4, Gaza, Israel (general), Israel, IS, IS00, 18315, 31.4167, 34.3333, -797156, 4, Gaza, Israel (general), Israel, IS, IS00, 18315, 31.4167, 34.3333, -797156, 20191201033000, http://www.palestinemonitor.org/details.php?id\u003dwzdwe4a24980yxl7df7gpz]               |\n|[890039547, 20191124, 201911, 2019, 2019.8877, GOV, ATTORNEY GENERAL, , , , , , GOV, , , MEX, MEXICO, MEX, , , , , , , , 0, 036, 036, 03, 1, 4.0, 2, 1, 2, -4.78927203065134, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 20191201033000, https://www.msn.com/en-us/news/world/at-least-14-killed-in-bloody-gunfight-in-northern-mexico/ar-BBXA228]|\n|[890039548, 20191124, 201911, 2019, 2019.8877, GOV, ATTORNEY GENERAL, , , , , , GOV, , , MEX, MEXICO, MEX, , , , , , , , 0, 042, 042, 04, 1, 1.9, 2, 1, 2, -4.78927203065134, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 20191201033000, https://www.msn.com/en-us/news/world/at-least-14-killed-in-bloody-gunfight-in-northern-mexico/ar-BBXA228]|\n|[890039549, 20191124, 201911, 2019, 2019.8877, ISR, ISRAEL, ISR, , , , , , , , ISRMED, ISRAEL, ISR, , , , , MED, , , 1, 193, 193, 19, 4, -10.0, 5, 1, 5, -5.07011866235168, 4, Hebron, Israel (general), Israel, IS, IS00, 18315, 31.5333, 35.1, -793097, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 20191201033000, http://www.palestinemonitor.org/details.php?id\u003dwzdwe4a24980yxl7df7gpz]       |\n|[890039550, 20191124, 201911, 2019, 2019.8877, ISR, ISRAELI, ISR, , , , , , , , ISRMED, ISRAEL, ISR, , , , , MED, , , 1, 193, 193, 19, 4, -10.0, 1, 1, 1, -5.07011866235168, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 20191201033000, http://www.palestinemonitor.org/details.php?id\u003dwzdwe4a24980yxl7df7gpz]|\n|[890039551, 20191124, 201911, 2019, 2019.8877, ISR, ISRAEL, ISR, , , , , , , , LAB, EMPLOYEE, , , , , , LAB, , , 0, 160, 160, 16, 4, -4.0, 4, 1, 4, -5.07011866235168, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 20191201033000, http://www.palestinemonitor.org/details.php?id\u003dwzdwe4a24980yxl7df7gpz]      |\n|[890039552, 20191124, 201911, 2019, 2019.8877, ISR, ISRAELI, ISR, , , , , , , , PSE, PALESTINE, PSE, , , , , , , , 0, 160, 160, 16, 4, -4.0, 6, 1, 6, -5.07011866235168, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 20191201033000, http://www.palestinemonitor.org/details.php?id\u003dwzdwe4a24980yxl7df7gpz]    |\n|[890039553, 20191124, 201911, 2019, 2019.8877, ISR, ISRAELI, ISR, , , , , , , , PSEMED, PALESTINIAN, PSE, , , , , MED, , , 1, 193, 193, 19, 4, -10.0, 2, 1, 2, -5.07011866235168, 4, Hebron, Israel (general), Israel, IS, IS00, 18315, 31.5333, 35.1, -793097, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 4, Jerusalem, Israel (general), Israel, IS, IS00, 18315, 31.7667, 35.2333, -797092, 20191201033000, http://www.palestinemonitor.org/details.php?id\u003dwzdwe4a24980yxl7df7gpz] |\n|[890039554, 20191124, 201911, 2019, 2019.8877, MEX, MEXICO, MEX, , , , , , , , GOV, ATTORNEY GENERAL, , , , , , GOV, , , 0, 036, 036, 03, 1, 4.0, 2, 1, 2, -4.78927203065134, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 20191201033000, https://www.msn.com/en-us/news/world/at-least-14-killed-in-bloody-gunfight-in-northern-mexico/ar-BBXA228]|\n|[890039555, 20191124, 201911, 2019, 2019.8877, MEX, MEXICO, MEX, , , , , , , , GOV, ATTORNEY GENERAL, , , , , , GOV, , , 0, 043, 043, 04, 1, 2.8, 2, 1, 2, -4.78927203065134, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 20191201033000, https://www.msn.com/en-us/news/world/at-least-14-killed-in-bloody-gunfight-in-northern-mexico/ar-BBXA228]|\n|[890039556, 20191124, 201911, 2019, 2019.8877, MEX, MEXICO, MEX, , , , , , , , MEXGOV, MEXICO, MEX, , , , , GOV, , , 0, 036, 036, 03, 1, 4.0, 2, 1, 2, -4.78927203065134, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 20191201033000, https://www.msn.com/en-us/news/world/at-least-14-killed-in-bloody-gunfight-in-northern-mexico/ar-BBXA228]    |\n|[890039557, 20191124, 201911, 2019, 2019.8877, MEX, MEXICO, MEX, , , , , , , , MEXGOV, MEXICO, MEX, , , , , GOV, , , 0, 043, 043, 04, 1, 2.8, 2, 1, 2, -4.78927203065134, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 20191201033000, https://www.msn.com/en-us/news/world/at-least-14-killed-in-bloody-gunfight-in-northern-mexico/ar-BBXA228]    |\n|[890039558, 20191124, 201911, 2019, 2019.8877, MEXGOV, MEXICO, MEX, , , , , GOV, , , MEX, MEXICO, MEX, , , , , , , , 0, 036, 036, 03, 1, 4.0, 2, 1, 2, -4.78927203065134, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 20191201033000, https://www.msn.com/en-us/news/world/at-least-14-killed-in-bloody-gunfight-in-northern-mexico/ar-BBXA228]    |\n|[890039559, 20191124, 201911, 2019, 2019.8877, MEXGOV, MEXICO, MEX, , , , , GOV, , , MEX, MEXICO, MEX, , , , , , , , 0, 042, 042, 04, 1, 1.9, 2, 1, 2, -4.78927203065134, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 4, Coahuila, Sonora, Mexico, MX, MX26, 20961, 28.6, -111.383, -1658163, 20191201033000, https://www.msn.com/en-us/news/world/at-least-14-killed-in-bloody-gunfight-in-northern-mexico/ar-BBXA228]    |\n|[890039560, 20191130, 201911, 2019, 2019.9041, COL, MEDELLIN, COL, , , , , , , , LAB, WORKER, , , , , , LAB, , , 0, 173, 173, 17, 4, -5.0, 8, 1, 8, -4.98220640569394, 4, Medellin, Antioquia, Colombia, CO, CO02, 13408, 6.29139, -75.5361, -592318, 4, Medellin, Antioquia, Colombia, CO, CO02, 13408, 6.29139, -75.5361, -592318, 4, Medellin, Antioquia, Colombia, CO, CO02, 13408, 6.29139, -75.5361, -592318, 20191201033000, https://fpmag.net/fpmag/december-2019/public-discontent-spreads-to-colombia/]              |\n|[890039561, 20191130, 201911, 2019, 2019.9041, COL, MEDELLIN, COL, , , , , , , , LAB, WORKER, , , , , , LAB, , , 0, 173, 173, 17, 4, -5.0, 2, 1, 2, -4.98220640569394, 1, United States, US, US, , 39.828175, -98.5795, US, 1, United States, US, US, , 39.828175, -98.5795, US, 1, United States, US, US, , 39.828175, -98.5795, US, 20191201033000, https://fpmag.net/fpmag/december-2019/public-discontent-spreads-to-colombia/]                                                                                            |\n|[890039562, 20191201, 201912, 2019, 2019.9068, , , , , , , , , , , BUS, BANK, , , , , , BUS, , , 0, 042, 042, 04, 1, 1.9, 4, 1, 4, -7.16510903426791, 0, , , , , , , , 4, Mumbai, Maharashtra, India, IN, IN16, 70184, 18.975, 72.8258, -2092174, 4, Mumbai, Maharashtra, India, IN, IN16, 70184, 18.975, 72.8258, -2092174, 20191201033000, https://indianexpress.com/article/india/pune-man-dupes-woman-of-rs-70000-6144904/]                                                                                                |\n|[890039563, 20191201, 201912, 2019, 2019.9068, , , , , , , , , , , BUS, BANK, , , , , , BUS, , , 0, 043, 043, 04, 1, 2.8, 2, 1, 2, -7.16510903426791, 0, , , , , , , , 4, Pune, Maharashtra, India, IN, IN16, 70178, 18.5333, 73.8667, -2108361, 4, Pune, Maharashtra, India, IN, IN16, 70178, 18.5333, 73.8667, -2108361, 20191201033000, https://indianexpress.com/article/india/pune-man-dupes-woman-of-rs-70000-6144904/]                                                                                                  |\n|[890039564, 20191201, 201912, 2019, 2019.9068, , , , , , , , , , , BUS, BANK, , , , , , BUS, , , 0, 0874, 087, 08, 2, 10.0, 4, 1, 4, -7.16510903426791, 0, , , , , , , , 4, Mumbai, Maharashtra, India, IN, IN16, 70184, 18.975, 72.8258, -2092174, 4, Mumbai, Maharashtra, India, IN, IN16, 70184, 18.975, 72.8258, -2092174, 20191201033000, https://indianexpress.com/article/india/pune-man-dupes-woman-of-rs-70000-6144904/]                                                                                              |\n+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+\nonly showing top 20 rows\n\n"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578825828073_-1261367640",
+      "id": "20200112-104348_1886460245",
+      "dateCreated": "Jan 12, 2020 10:43:48 AM",
+      "dateStarted": "Jan 12, 2020 10:56:45 AM",
+      "dateFinished": "Jan 12, 2020 10:56:46 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "%md\n#### Etape 2 : Préparation des données pour chaque problématique\n- Afficher le nombre d’articles/évènements qu’il y a eu pour chaque triplet (jour, pays de l’évènement, langue de l’article).\n\n- Pour un pays donné en paramètre, afficher les évènements qui y ont eu lieu triés par le nombre de mentions (tri décroissant); permetter une agrégation par jour/mois/année\n\n- Pour une source de donnés passée en paramètre (gkg.SourceCommonName), afficher les thèmes, personnes, lieux dont les articles de cette sources parlent, ainsi que le nombre d’articles et le ton moyen des articles (pour chaque thème/personne/lieu); permetter une agrégation par jour/mois/année.\n\n- Dresser la cartographie des relations entre les pays d’après le ton des articles : pour chaque paire (pays1, pays2), calculer le nombre d’article, le ton moyen (aggrégations sur Année/Mois/Jour, filtrage par pays ou carré de coordonnées)\n",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:44:25 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "markdown",
+          "editOnDblClick": true
+        },
+        "editorMode": "ace/mode/markdown",
+        "editorHide": true,
+        "tableHide": false
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "results": {
+        "code": "SUCCESS",
+        "msg": [
+          {
+            "type": "HTML",
+            "data": "\u003cdiv class\u003d\"markdown-body\"\u003e\n\u003ch4\u003eEtape 2 : Préparation des données pour chaque problématique\u003c/h4\u003e\n\u003cul\u003e\n  \u003cli\u003e\n  \u003cp\u003eAfficher le nombre d’articles/évènements qu’il y a eu pour chaque triplet (jour, pays de l’évènement, langue de l’article).\u003c/p\u003e\u003c/li\u003e\n  \u003cli\u003e\n  \u003cp\u003ePour un pays donné en paramètre, afficher les évènements qui y ont eu lieu triés par le nombre de mentions (tri décroissant); permetter une agrégation par jour/mois/année\u003c/p\u003e\u003c/li\u003e\n  \u003cli\u003e\n  \u003cp\u003ePour une source de donnés passée en paramètre (gkg.SourceCommonName), afficher les thèmes, personnes, lieux dont les articles de cette sources parlent, ainsi que le nombre d’articles et le ton moyen des articles (pour chaque thème/personne/lieu); permetter une agrégation par jour/mois/année.\u003c/p\u003e\u003c/li\u003e\n  \u003cli\u003e\n  \u003cp\u003eDresser la cartographie des relations entre les pays d’après le ton des articles : pour chaque paire (pays1, pays2), calculer le nombre d’article, le ton moyen (aggrégations sur Année/Mois/Jour, filtrage par pays ou carré de coordonnées)\u003c/p\u003e\u003c/li\u003e\n\u003c/ul\u003e\n\u003c/div\u003e"
+          }
+        ]
+      },
+      "apps": [],
+      "jobName": "paragraph_1578825628868_1691120443",
+      "id": "20200112-104028_1120068338",
+      "dateCreated": "Jan 12, 2020 10:40:28 AM",
+      "dateStarted": "Jan 12, 2020 10:44:25 AM",
+      "dateFinished": "Jan 12, 2020 10:44:25 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    },
+    {
+      "text": "",
+      "user": "anonymous",
+      "dateUpdated": "Jan 12, 2020 10:44:24 AM",
+      "config": {
+        "colWidth": 12.0,
+        "enabled": true,
+        "results": {},
+        "editorSetting": {
+          "language": "scala"
+        },
+        "editorMode": "ace/mode/scala"
+      },
+      "settings": {
+        "params": {},
+        "forms": {}
+      },
+      "apps": [],
+      "jobName": "paragraph_1578825800968_-2076527965",
+      "id": "20200112-104320_732444036",
+      "dateCreated": "Jan 12, 2020 10:43:20 AM",
+      "status": "FINISHED",
+      "progressUpdateIntervalMs": 500
+    }
+  ],
+  "name": "Extract_Transform_Load",
+  "id": "2EYSU9F8Q",
+  "angularObjects": {
+    "2EZMK8N3H:shared_process": [],
+    "2EWC67YS7:shared_process": [],
+    "2EYJ6U1V9:shared_process": [],
+    "2EYECJ5AK:shared_process": [],
+    "2EX36XWV8:shared_process": [],
+    "2EZEHN2QH:shared_process": [],
+    "2EWFVQ8K9:shared_process": [],
+    "2EXY89TDE:shared_process": [],
+    "2EYNTU4Q3:shared_process": [],
+    "2EY6KQFRP:shared_process": [],
+    "2EWJ5PR2V:shared_process": [],
+    "2EZUYM75H:shared_process": [],
+    "2EXTFGUQ8:shared_process": [],
+    "2EY5MSVS1:shared_process": [],
+    "2EZE1C9E4:shared_process": [],
+    "2EYCJPC59:shared_process": [],
+    "2EXSXFQSS:shared_process": [],
+    "2EX4EDKRM:shared_process": [],
+    "2EXZN65GW:shared_process": []
+  },
+  "config": {
+    "looknfeel": "default",
+    "personalizedMode": "false"
+  },
+  "info": {}
+}
